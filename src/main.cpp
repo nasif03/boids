@@ -13,22 +13,22 @@
 
 // constants
 
-const int SCR_WIDTH = 1920;
-const int SCR_HEIGHT = 1080;
+const int SCR_WIDTH  = 900;
+const int SCR_HEIGHT = 900;
 
-const int BOIDS = 400;
-const float VISIBLE_RANGE = 20.0f;
-const float PROTECTED_RANGE = 7.0f;
-const float CENTERING_FACTOR = 0.0002f;
-const float AVOID_FACTOR = 0.02f;
-const float MATCHING_FACTOR = 0.02f;
-const float TURN_FACTOR = 0.2f;
-const float BIAS = 0.001f;
-const float MAX_BIAS = 0.01f;
-const float BIAS_INCREMENT = 0.00004f;
-const float MIN_SPEED = 12.0f;
-const float MAX_SPEED = 6.0f;
-const float MARGIN = 50.0f;
+const int BOIDS                  = 256;
+const float VISIBLE_RANGE        = 30.0f;
+const float PROTECTED_RANGE      = 5.0f;
+const float CENTERING_FACTOR     = 0.0002f;
+const float AVOID_FACTOR         = 0.015f;
+const float MATCHING_FACTOR      = 0.02f;
+const float TURN_FACTOR          = 0.2f;
+const float BIAS                 = 0.001f;
+const float MAX_BIAS             = 0.01f;
+const float BIAS_INCREMENT       = 0.00004f;
+const float MIN_SPEED            = 12.0f;
+const float MAX_SPEED            = 6.0f;
+const float MARGIN               = 50.0f;
 
 // timing
 
@@ -37,9 +37,10 @@ float last_frame = 0.0f;
 
 // camera
 
-glm::vec3 camera_pos = glm::vec3(-30.0f, 0.0f, 0.0f);
-glm::vec3 camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
+glm::vec3 camera_pos     = glm::vec3(-30.0f, 0.0f, 0.0f);
+glm::vec3 camera_front   = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 camera_up      = glm::vec3(0.0f, 1.0f, 0.0f);
+
 float yaw = 0.0f, pitch = 0.0f;
 float last_x = SCR_WIDTH / 2.0f, last_y = SCR_HEIGHT / 2.0f;
 bool first_mouse = true;
@@ -127,7 +128,7 @@ int main() {
 
     // shaders
 
-    unsigned int shader_id = shader_init("../shaders/v1.vs", "../shaders/f1.fs");
+    unsigned int shader_id = shader_init("shaders/v1.vs", "shaders/f1.fs");
     glUseProgram(shader_id);
 
     // matrices
@@ -135,7 +136,7 @@ int main() {
     glm::mat4 view;
     glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 projection;
-    projection = glm::perspective(glm::radians(90.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(90.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1000.0f);
 
     int model_loc = glGetUniformLocation(shader_id, "model");
     int view_loc = glGetUniformLocation(shader_id, "view");
@@ -216,9 +217,9 @@ int main() {
                 boid_vel[i].x += TURN_FACTOR;
             if (boid_pos[i].x > MARGIN)
                 boid_vel[i].x -= TURN_FACTOR;
-            if (boid_pos[i].y < -MARGIN)
+            if (boid_pos[i].y < -MARGIN / 2)
                 boid_vel[i].y += TURN_FACTOR;
-            if (boid_pos[i].y > MARGIN)
+            if (boid_pos[i].y > MARGIN / 2)
                 boid_vel[i].y -= TURN_FACTOR;
             if (boid_pos[i].z < -MARGIN)
                 boid_vel[i].z += TURN_FACTOR;
@@ -243,10 +244,7 @@ int main() {
         
         for (int i = 0; i < BOIDS; i++) {
             model = glm::mat4(1.0f);
-            glm::mat4 rotation = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),
-                                             boid_vel[i],
-                                             camera_up);
-
+            glm::mat4 rotation = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), boid_vel[i], camera_up);
             model = glm::translate(model, boid_pos[i]) * rotation;
 
             glUniformMatrix4fv(model_loc, 1, GL_FALSE, glm::value_ptr(model));
