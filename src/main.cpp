@@ -131,6 +131,7 @@ int main() {
         {
             ImGui::Begin("Boids:");
             ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+            ImGui::Text("Count: %d", NUM_BOIDS);
             ImGui::End();
         }
 

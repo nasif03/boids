@@ -30,7 +30,6 @@ void main() {
 
     float scale = 0.25;
     float width = 0.1;
-    float tail_len = 0.05;
 
     vec3 v_nose  = pos + forward * scale;
     vec3 v_left  = pos - forward * (scale * 0.2) + right * width;
