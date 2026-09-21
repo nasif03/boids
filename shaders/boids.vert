@@ -1,8 +1,8 @@
 #version 430 core
 
 const vec3 colors[] = {
-    vec3(0.0,  1.0,  1.0), // cyan
     vec3(0.04, 0.10, 0.48), // dark blue
+    vec3(0.0,  1.0,  1.0), // cyan
     vec3(0.40, 0.88, 0.40), // light green
     vec3(1.00, 0.30, 0.30),
     vec3(1.00, 0.10, 0.10),
@@ -34,5 +34,5 @@ out vec3 v_color;
 void main() {
     v_out.pos = boids[gl_VertexID].pos.xyz;
     v_out.vel = boids[gl_VertexID].vel.xyz;
-    v_out.color = colors[gl_VertexID % 3];
+    v_out.color = colors[gl_VertexID % 1];
 }

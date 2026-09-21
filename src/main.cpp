@@ -3,9 +3,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
 
 #include <iostream>
 #include <random>
@@ -65,6 +65,27 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_PROGRAM_POINT_SIZE);
     #pragma endregion
+     
+    #pragma region initialize DearImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    float xscale = 1.0f, yscale = 1.0f;
+    glfwGetWindowContentScale(window, &xscale, &yscale);
+
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.ScaleAllSizes(xscale);
+    io.Fonts->AddFontDefault();
+    ImFontConfig font_cfg;
+    font_cfg.SizePixels = 13.0f * xscale;
+    io.Fonts->AddFontDefault(&font_cfg);
+
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init();
+
+    #pragma endregion
     
     // random number generator
     
@@ -73,7 +94,7 @@ int main() {
     std::uniform_real_distribution<float> dist(-1, 1);
 
     // initialize boid positions and velocity
-
+    
     Boid boids[NUM_BOIDS];
     for (u32 i = 0; i < NUM_BOIDS; i++) {
         boids[i].pos = { dist(mt) * 30.0f, dist(mt) * 10.0f, dist(mt) * 30.0f, 0.0f };
@@ -87,10 +108,8 @@ int main() {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
     glBufferData(GL_SHADER_STORAGE_BUFFER, NUM_BOIDS * sizeof(Boid), boids, GL_DYNAMIC_COPY);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
-
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
-
 
     u32 render_shader = shader_create_with_geometry("shaders/boids.vert", "shaders/boids.geom", "shaders/boids.frag");
     u32 compute_shader = compute_shader_create("shaders/boids.comp");
@@ -98,28 +117,35 @@ int main() {
     // render loop
 
     while (!glfwWindowShouldClose(window)) {
-        // timing
+        glfwPollEvents();
         
+        // timing
         float current_frame = (float)glfwGetTime();
         delta_time = current_frame - last_frame;
         last_frame = current_frame;
 
-        // input
+        // imgui
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        {
+            ImGui::Begin("Boids:");
+            ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+            ImGui::End();
+        }
 
+        // input
         process_input(window);
 
         // update boid positions
-
         shader_bind(compute_shader);
         shader_set_float(compute_shader, "u_delta_time", delta_time);
 
         u32 num_groups = (NUM_BOIDS + 255) / 256;
         glDispatchCompute(num_groups, 1, 1);
-
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
         
         // render
-
         glClearColor(0.7f, 0.7f, 0.75f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -134,10 +160,11 @@ int main() {
         glBindVertexArray(vao);
         glDrawArrays(GL_POINTS, 0, NUM_BOIDS);
 
-        // draw boids
+        // render :: imgui
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
-        glfwPollEvents();
     }
 
     glfwDestroyWindow(window);
