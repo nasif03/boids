@@ -1,3 +1,0 @@
-C:/Users/nasif/projects/boids/build/CMakeFiles/edit_cache.dir
-C:/Users/nasif/projects/boids/build/CMakeFiles/boids.dir
-C:/Users/nasif/projects/boids/build/CMakeFiles/rebuild_cache.dir

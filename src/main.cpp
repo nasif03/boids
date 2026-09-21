@@ -8,8 +8,8 @@
 #include "stb_image.h"
 
 #include <iostream>
-#include <assert.h>
 #include <random>
+#include <cassert>
 
 // constants
 

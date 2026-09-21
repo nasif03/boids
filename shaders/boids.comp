@@ -1,0 +1,91 @@
+#version 430 core
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+const int   NUM_BOIDS         = 20000;
+const float PROTECTED_RANGE   = 1.2;
+const float VISIBLE_RANGE     = 3.0;
+const float AVOID_FACTOR      = 0.05;
+const float CENTERING_FACTOR  = 0.0004;
+const float MATCHING_FACTOR   = 0.04;
+const float TURN_FACTOR       = 0.05;
+const float MIN_SPEED         = 2.0;
+const float MAX_SPEED         = 8.0;
+const float BOUNDARY          = 30.0;
+
+uniform float u_delta_time;
+
+struct Boid {
+    vec4 pos;
+    vec4 vel;
+};
+
+layout(std430, binding = 0) buffer boid_buffer {
+    Boid boids[];
+};
+
+void main() {
+    uint index = gl_GlobalInvocationID.x;
+    if (index >= NUM_BOIDS) return;
+
+    vec3 close = vec3(0.0);
+    vec3 avg_vel = vec3(0.0);
+    vec3 avg_pos = vec3(0.0);
+    int neighbors = 0;
+
+    Boid b = boids[index];
+    vec3 b_pos = b.pos.xyz;
+    vec3 b_vel = b.vel.xyz;
+
+    for (int i = 0; i < NUM_BOIDS; i++) {
+        if (i == index) {
+            continue;
+        }
+
+        vec3 other_pos = boids[i].pos.xyz;
+        vec3 other_vel = boids[i].vel.xyz;
+
+        vec3 diff = b_pos - other_pos;
+        float dist = length(diff);
+
+        if (dist < 0.0001) continue;
+
+        if (dist < PROTECTED_RANGE) {
+            close += (diff / (dist * dist));
+        }
+
+        if (dist < VISIBLE_RANGE) {
+            avg_vel += other_vel;
+            avg_pos += other_pos;
+            neighbors++;
+        }
+    }
+
+    b_vel += close * AVOID_FACTOR;
+    if (neighbors > 0) {
+        avg_vel /= neighbors;
+        avg_pos /= neighbors;
+        b_vel += (avg_vel - b_vel) * MATCHING_FACTOR;
+        b_vel += (avg_pos - b_pos) * CENTERING_FACTOR;
+    }
+
+    float speed = length(b_vel);
+    if (speed > MAX_SPEED) {
+        b_vel *= MAX_SPEED / speed;
+    }
+    if (speed < MIN_SPEED) {
+        b_vel *= MIN_SPEED / speed;
+    }
+
+    float dist_from_center = length(b_pos);
+    if (dist_from_center > BOUNDARY) {
+        vec3 push_back_dir = -normalize(b_pos);
+        float excess = dist_from_center - BOUNDARY;
+        b_vel += push_back_dir * excess * excess * TURN_FACTOR;
+    }
+
+    b_pos += b_vel * u_delta_time;
+
+    boids[index].pos = vec4(b_pos, b.pos.w);
+    boids[index].vel = vec4(b_vel, 1.0);
+}
